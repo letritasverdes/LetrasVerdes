@@ -224,6 +224,7 @@ $materia_filtro = isset($_GET['materia']) ? strtolower($_GET['materia']) : 'todo
             max-width: 500px; width: 90%; text-align: center;
             border: 3px solid var(--verde-claro);
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            position: relative;
         }
 
         .grid-seleccion-mascotas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
@@ -289,6 +290,81 @@ $materia_filtro = isset($_GET['materia']) ? strtolower($_GET['materia']) : 'todo
         }
 
         .btn-modal-entendido:hover { background-color: #1b4332; }
+
+        /* Estilos Adaptativos para Teléfonos Móviles */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+
+            .btn-volver-inicio, 
+            .user-info {
+                position: static !important;
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+                box-sizing: border-box;
+            }
+
+            .header h1 {
+                font-size: 1.6rem;
+                margin-top: 5px;
+            }
+
+            .slogan {
+                font-size: 0.85rem;
+            }
+
+            .contenedor-cuentos {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
+            }
+
+            .tarjeta-cuento {
+                padding: 12px;
+            }
+
+            .tarjeta-emoji {
+                font-size: 1.8rem;
+            }
+
+            .tarjeta-titulo {
+                font-size: 0.95rem;
+            }
+
+            .tarjeta-resumen {
+                font-size: 0.78rem;
+            }
+
+            .mascota-widget-container {
+                right: 10px;
+                bottom: 10px;
+            }
+
+            .burbuja-dialogo {
+                max-width: 140px;
+                padding: 6px 10px;
+                font-size: 0.75rem;
+            }
+
+            .avatar-mascota {
+                width: 48px;
+                height: 48px;
+            }
+
+            .modal-contenido {
+                width: 92%;
+                padding: 18px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -340,6 +416,20 @@ $materia_filtro = isset($_GET['materia']) ? strtolower($_GET['materia']) : 'todo
                 Haz clic en el círculo de tu mascota abajo a la derecha para rotar y elegir tu nuevo diseño.
             </div>
             <button onclick="cerrarModalDesbloqueo()" class="btn-modal-entendido">¡Genial!</button>
+        </div>
+    </div>
+
+    <!-- Modal para Leer Cuento -->
+    <div id="modalLecturaCuento" class="modal-overlay" style="display: none;">
+        <div class="modal-contenido" style="text-align: left; max-height: 85vh; overflow-y: auto;">
+            <span onclick="cerrarModalLectura()" style="float: right; cursor: pointer; font-size: 1.8rem; font-weight: bold; color: #64748b;">&times;</span>
+            <h2 id="modalTitulo" style="color: var(--verde-primario); text-align: center; margin-top: 10px;"></h2>
+            <hr style="border: 1px solid var(--verde-claro); margin: 15px 0;">
+            <div id="modalTexto" style="margin-top: 15px; font-size: 1.05rem; line-height: 1.6; color: #334155;"></div>
+            <div id="modalMoraleja" style="margin-top: 20px; background: #fff9db; padding: 12px; border-left: 4px solid #ffd166; border-radius: 8px; color: #78350f;"></div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="cerrarModalLectura()" class="btn-modal-entendido">Cerrar Lectura</button>
+            </div>
         </div>
     </div>
 
@@ -406,6 +496,7 @@ $materia_filtro = isset($_GET['materia']) ? strtolower($_GET['materia']) : 'todo
     </div>
 
     <script>
+    const TODOS_LOS_CUENTOS = <?php echo json_encode($TODOS_LOS_CUENTOS); ?>;
     const MAX_XP = 1000;
     const MAX_NIVEL = 50;
 
@@ -440,6 +531,13 @@ $materia_filtro = isset($_GET['materia']) ? strtolower($_GET['materia']) : 'todo
     function leerCuento(idCuento) {
         if (!mascotaActual) return;
 
+        // 1. Mostrar la lectura en pantalla
+        const cuento = TODOS_LOS_CUENTOS.find(c => String(c.id) === String(idCuento));
+        if (cuento) {
+            abrirModalLectura(cuento);
+        }
+
+        // 2. Registrar avance y guardar
         if (!cuentosLeidosIds.includes(String(idCuento))) {
             const nivelAntes = obtenerNivelPorXp(xpActual);
             const aspectosAntes = obtenerAspectosDesbloqueados(nivelAntes);
@@ -452,15 +550,33 @@ $materia_filtro = isset($_GET['materia']) ? strtolower($_GET['materia']) : 'todo
             const nivelNuevo = obtenerNivelPorXp(xpActual);
             const aspectosNuevos = obtenerAspectosDesbloqueados(nivelNuevo);
 
-            // Si desbloqueó un nuevo aspecto
             if (aspectosNuevos > aspectosAntes) {
                 mostrarNotificacionDesbloqueo(aspectosNuevos);
             }
 
             actualizarInterfaz();
             marcarCuentosLeidosUI();
-            guardarEnServidor(10); // Otorga +10 monedas por cuento leído
+            guardarEnServidor(10);
         }
+    }
+
+    function abrirModalLectura(cuento) {
+        document.getElementById("modalTitulo").innerHTML = `${cuento.emoji || '📖'} ${cuento.titulo}`;
+        document.getElementById("modalTexto").innerHTML = cuento.texto || '';
+        
+        const divMoraleja = document.getElementById("modalMoraleja");
+        if (cuento.moraleja) {
+            divMoraleja.innerHTML = `<strong>💡 Moraleja:</strong> ${cuento.moraleja}`;
+            divMoraleja.style.display = "block";
+        } else {
+            divMoraleja.style.display = "none";
+        }
+
+        document.getElementById("modalLecturaCuento").style.display = "flex";
+    }
+
+    function cerrarModalLectura() {
+        document.getElementById("modalLecturaCuento").style.display = "none";
     }
 
     function guardarEnServidor(monedasGanadas = 0) {

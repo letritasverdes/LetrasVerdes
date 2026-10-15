@@ -18,64 +18,71 @@ $energia =$usuario['energia'] ?? 100;
 $higiene =$usuario['higiene'] ?? 100;
 $monedas =$usuario['monedas'] ?? 250;
 $nivel =$usuario['nivel'] ?? 1;
-$inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
+$xp =$usuario['xp'] ?? 0;
+$inventario_raw = !empty($usuario['inventario']) ? $usuario['inventario'] : '{}';$mascotas_raw = !empty($usuario['mascotas_desbloqueadas']) ?$usuario['mascotas_desbloqueadas'] : '["leto"]';
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pou Completo - Letras Verdes</title>
+    <title>Mascota Virtual - Letras Verdes</title>
     <style>
-        * { user-select: none; box-sizing: border-box; touch-action: none; font-family: sans-serif; }
-        body { background: #0f172a; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; color: #fff; }
-        .pou-topbar { width: 100%; max-width: 450px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        * { user-select: none; box-sizing: border-box; font-family: sans-serif; }
+        body { background: #0f172a; margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; color: #fff; overflow-y: auto; }
+        .mascota-topbar { width: 100%; max-width: 450px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .btn-salir { background: #fff; color: #166534; padding: 6px 14px; border-radius: 20px; font-weight: bold; text-decoration: none; }
         .monedas-box { background: #fef08a; border: 2px solid #eab308; color: #854d0e; padding: 6px 14px; border-radius: 20px; font-weight: bold; }
-        
-        .pou-screen { width: 100%; max-width: 450px; height: 530px; background: #fed7aa; border: 6px solid #334155; border-radius: 24px; position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 10px; overflow: hidden; }
+        .status-save { font-size: 0.75rem; color: #a3e635; font-weight: bold; transition: opacity 0.3s; }
+
+        .mascota-screen { width: 100%; max-width: 450px; height: 530px; background: #fed7aa; border: 6px solid #334155; border-radius: 24px; position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 10px; overflow: hidden; }
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: rgba(255,255,255,0.9); padding: 6px; border-radius: 12px; }
         .stat-card { text-align: center; font-size: 0.65rem; color: #1e293b; font-weight: bold; }
         .bar-outer { width: 100%; height: 6px; background: #cbd5e1; border-radius: 4px; overflow: hidden; margin-top: 2px; }
         .bar-inner { height: 100%; width: 100%; transition: width 0.3s; }
         .b-hambre { background: #f97316; } .b-felicidad { background: #eab308; } .b-energia { background: #3b82f6; } .b-higiene { background: #06b6d4; }
 
-        .stage { position: relative; width: 100%; height: 320px; display: flex; justify-content: center; align-items: center; }
-        .pou-body-container { position: relative; width: 170px; height: 170px; transition: transform 0.3s; }
-        .pou-sprite { width: 100%; height: 100%; object-fit: contain; }
+        .stage { position: relative; width: 100%; height: 320px; display: flex; justify-content: center; align-items: center; touch-action: none; }
+        .mascota-body-container { position: relative; width: 170px; height: 170px; transition: transform 0.3s; }
+        .mascota-sprite { width: 100%; height: 100%; object-fit: contain; }
         .dirt-layer, .soap-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .dirt-spot { position: absolute; width: 22px; height: 22px; background: #78350f; border-radius: 50%; opacity: 0.85; }
         .soap-bubble { position: absolute; width: 26px; height: 26px; background: rgba(255,255,255,0.9); border: 2px solid #38bdf8; border-radius: 50%; }
 
-        .drag-item { width: 60px; height: 60px; position: absolute; z-index: 1000; cursor: grab; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        .drag-item { width: 60px; height: 60px; position: absolute; z-index: 1000; cursor: grab; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); touch-action: none; }
         .shelf { display: flex; justify-content: flex-start; gap: 8px; background: rgba(255,255,255,0.3); padding: 8px; border-radius: 16px; min-height: 65px; overflow-x: auto; }
         .shelf-slot { min-width: 50px; height: 50px; background: rgba(255,255,255,0.9); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; cursor: pointer; position: relative; flex-shrink: 0; }
         .badge-count { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; border-radius: 10px; padding: 1px 5px; font-size: 0.6rem; font-weight: bold; }
 
-        .room-nav { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; width: 100%; max-width: 450px; margin-top: 8px; }
-        .room-btn { background: #334155; color: #fff; border: none; padding: 8px 0; border-radius: 8px; font-size: 0.7rem; font-weight: bold; cursor: pointer; text-align: center; }
+        .room-nav { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; width: 100%; max-width: 450px; margin-top: 10px; margin-bottom: 20px; }
+        .room-btn { background: #334155; color: #fff; border: none; padding: 10px 0; border-radius: 8px; font-size: 0.75rem; font-weight: bold; cursor: pointer; text-align: center; }
         .room-btn.active { background: #22c55e; }
 
         .overlay-panel { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 2000; border-radius: 18px; padding: 12px; flex-direction: column; }
         .subnav-tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 4px; }
         .tab-btn { background: #334155; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; white-space: nowrap; }
         .tab-btn.active { background: #ec4899; }
+        #minijuegoCanvas { touch-action: none; background: #0284c7; border-radius: 10px; }
+
+        .pet-card { background: #1e293b; padding: 10px; border-radius: 12px; text-align: center; border: 2px solid #334155; }
+        .pet-card.bloqueado { opacity: 0.45; filter: grayscale(1); }
+        .pet-card.equipada { border-color: #22c55e; background: #064e3b; }
     </style>
 </head>
 <body>
 
-    <div class="pou-topbar">
+    <div class="mascota-topbar">
         <a href="cuentos.php" class="btn-salir">🏠 Salir</a>
-        <div>Nivel <span id="lblNivel"><?php echo $nivel; ?></span></div>
-        <div class="monedas-box">🪙 <span id="lblMonedas"><?php echo $monedas; ?></span></div>
+        <div>Nivel <span id="lblNivel"><?php echo (int)$nivel; ?></span></div>
+        <div class="monedas-box">🪙 <span id="lblMonedas"><?php echo (int)$monedas; ?></span></div>
+        <div class="status-save" id="lblSaveStatus">✅</div>
     </div>
 
-    <div class="pou-screen" id="screen">
+    <div class="mascota-screen" id="screen">
         <!-- Overlay Minijuegos -->
         <div id="gameOverlay" class="overlay-panel">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <h3 style="margin:0; font-size:1rem;">🎮 Selecciona un Minijuego</h3>
-                <button onclick="cerrarOverlay()" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:6px;">❌</button>
+                <button onclick="cerrarOverlay()" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;">❌</button>
             </div>
             <div class="subnav-tabs">
                 <button class="tab-btn" onclick="juegoEngine.iniciarFoodDrop()">🍕 Food Drop</button>
@@ -88,14 +95,14 @@ $inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
                 <button class="tab-btn" onclick="juegoEngine.iniciarSadTap()">😢 Sad Tap</button>
                 <button class="tab-btn" onclick="juegoEngine.iniciarTicTacPou()">❌ Tic Tac</button>
             </div>
-            <canvas id="minijuegoCanvas" width="400" height="380" style="background:#0284c7; border-radius:10px;"></canvas>
+            <canvas id="minijuegoCanvas" width="400" height="380"></canvas>
         </div>
 
-        <!-- Overlay Tienda Completa -->
+        <!-- Overlay Tienda y Catalogo -->
         <div id="shopOverlay" class="overlay-panel" style="overflow-y:auto;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <h3 style="margin:0; font-size:1rem;">🛒 Tienda de Pou</h3>
-                <button onclick="cerrarOverlay()" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:6px;">❌</button>
+                <h3 style="margin:0; font-size:1rem;" id="titOverlay">🛒 Tienda</h3>
+                <button onclick="cerrarOverlay()" style="background:#ef4444; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;">❌</button>
             </div>
             <div class="subnav-tabs" id="shopTabs"></div>
             <div id="shopContent" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;"></div>
@@ -103,16 +110,16 @@ $inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
 
         <!-- Stats -->
         <div class="stats-grid">
-            <div class="stat-card">🍕 <span id="valHambre"><?php echo $hambre; ?></span>%<div class="bar-outer"><div id="barHambre" class="bar-inner b-hambre"></div></div></div>
-            <div class="stat-card">⚽ <span id="valFelicidad"><?php echo $felicidad; ?></span>%<div class="bar-outer"><div id="barFelicidad" class="bar-inner b-felicidad"></div></div></div>
-            <div class="stat-card">⚡ <span id="valEnergia"><?php echo $energia; ?></span>%<div class="bar-outer"><div id="barEnergia" class="bar-inner b-energia"></div></div></div>
-            <div class="stat-card">🧼 <span id="valHigiene"><?php echo $higiene; ?></span>%<div class="bar-outer"><div id="barHigiene" class="bar-inner b-higiene"></div></div></div>
+            <div class="stat-card">🍕 <span id="valHambre"><?php echo (int)$hambre; ?></span>%<div class="bar-outer"><div id="barHambre" class="bar-inner b-hambre"></div></div></div>
+            <div class="stat-card">⚽ <span id="valFelicidad"><?php echo (int)$felicidad; ?></span>%<div class="bar-outer"><div id="barFelicidad" class="bar-inner b-felicidad"></div></div></div>
+            <div class="stat-card">⚡ <span id="valEnergia"><?php echo (int)$energia; ?></span>%<div class="bar-outer"><div id="barEnergia" class="bar-inner b-energia"></div></div></div>
+            <div class="stat-card">🧼 <span id="valHigiene"><?php echo (int)$higiene; ?></span>%<div class="bar-outer"><div id="barHigiene" class="bar-inner b-higiene"></div></div></div>
         </div>
 
         <!-- Stage -->
         <div class="stage" id="stage">
-            <div class="pou-body-container" id="pouContainer">
-                <img id="pouSprite" class="pou-sprite" src="imgM/<?php echo $mascota; ?>/e1.png" alt="Pou">
+            <div class="mascota-body-container" id="mascotaContainer">
+                <img id="mascotaSprite" class="mascota-sprite" src="imgM/<?php echo htmlspecialchars($mascota); ?>/e1.png" alt="Mascota">
                 <div class="dirt-layer" id="dirtLayer"></div>
                 <div class="soap-layer" id="soapLayer"></div>
             </div>
@@ -132,27 +139,32 @@ $inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
     </div>
 
     <script src="tienda_datos.js"></script>
+    <script src="mascotas.js"></script>
     <script src="minijuegos.js"></script>
     <script>
     let state = {
-        hambre: <?php echo $hambre; ?>,
-        felicidad: <?php echo $felicidad; ?>,
-        energia: <?php echo $energia; ?>,
-        higiene: <?php echo $higiene; ?>,
-        monedas: <?php echo $monedas; ?>,
-        nivel: <?php echo $nivel; ?>,
+        hambre: <?php echo (int)$hambre; ?>,
+        felicidad: <?php echo (int)$felicidad; ?>,
+        energia: <?php echo (int)$energia; ?>,
+        higiene: <?php echo (int)$higiene; ?>,
+        monedas: <?php echo (int)$monedas; ?>,
+        nivel: <?php echo (int)$nivel; ?>,
+        xp: <?php echo (int)$xp; ?>,
+        mascota_clave: <?php echo json_encode($mascota); ?>,
+        mascotas_desbloqueadas: <?php echo $mascotas_raw; ?>,
         inventario: <?php echo $inventario_raw; ?>
     };
 
-    const mascotaClave = "<?php echo $mascota; ?>";
     let juegoEngine = null;
     let esNoche = false;
+    let timerGuardadoDebounce = null;
 
     window.onload = () => {
         const canvas = document.getElementById('minijuegoCanvas');
         const ctx = canvas.getContext('2d');
         juegoEngine = new MotoresMinijuegos(canvas, ctx, (monedasGanadas) => {
             state.monedas += monedasGanadas;
+            state.xp += monedasGanadas;
             actualizarBarras();
         });
 
@@ -173,7 +185,12 @@ $inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
         document.getElementById('lblMonedas').textContent = state.monedas;
         document.getElementById('lblNivel').textContent = state.nivel;
 
-        guardarServidor();
+        document.getElementById('lblSaveStatus').textContent = '⏳ Guardando...';
+
+        clearTimeout(timerGuardadoDebounce);
+        timerGuardadoDebounce = setTimeout(() => {
+            guardarServidor();
+        }, 2500);
     }
 
     function irASala(sala, e) {
@@ -191,7 +208,9 @@ $inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
                     let cant = state.inventario.comida[cat][itemKey];
                     if (cant > 0) {
                         let meta = buscarMetaItem('comida', cat, itemKey);
-                        shelf.innerHTML += `<div class="shelf-slot" onclick="crearArrastrable('${meta.icon}', 'comida', '${cat}', '${itemKey}')">${meta.icon}<span class="badge-count">${cant}</span></div>`;
+                        if (meta) {
+                            shelf.innerHTML += `<div class="shelf-slot" onclick="crearArrastrable('${meta.icon}', 'comida', '${cat}', '${itemKey}')">${meta.icon}<span class="badge-count">${cant}</span></div>`;
+                        }
                     }
                 }
             }
@@ -213,15 +232,18 @@ $inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
                 }
             }
         } else if (sala === 'juegos') {
-            shelf.innerHTML = `<button style="background:#f59e0b; color:white; border:none; padding:10px 20px; border-radius:12px; font-weight:bold; cursor:pointer;" onclick="abrirMinijuegos()">🎮 Abrir Galería de Minijuegos</button>`;
+            shelf.innerHTML = `<button style="background:#f59e0b; color:white; border:none; padding:10px 20px; border-radius:12px; font-weight:bold; cursor:pointer;" onclick="abrirMinijuegos()">🎮 Galería de Minijuegos</button>`;
         } else if (sala === 'tienda') {
-            shelf.innerHTML = `<button style="background:#ec4899; color:white; border:none; padding:10px 20px; border-radius:12px; font-weight:bold; cursor:pointer;" onclick="abrirTienda('comida')">🛒 Entrar a la Tienda</button>`;
+            shelf.innerHTML = `
+                <button style="background:#ec4899; color:white; border:none; padding:10px 20px; border-radius:12px; font-weight:bold; cursor:pointer;" onclick="abrirTienda('comida')">🛒 Tienda</button>
+                <button style="background:#a855f7; color:white; border:none; padding:10px 20px; border-radius:12px; font-weight:bold; cursor:pointer;" onclick="abrirCatalogoMascotas()">🏆 Colección Mascotas</button>
+            `;
         }
     }
 
     function buscarMetaItem(tipo, cat, id) {
         if (tipo === 'comida') {
-            return TIENDA_CATALOGO.comida[cat].find(i => i.id === id);
+            return TIENDA_CATALOGO.comida[cat] ? TIENDA_CATALOGO.comida[cat].find(i => i.id === id) : null;
         }
         return TIENDA_CATALOGO.pociones.find(i => i.id === id);
     }
@@ -247,21 +269,21 @@ $inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
             item.style.left = (e.clientX - rect.left - 30) + 'px';
             item.style.top = (e.clientY - rect.top - 30) + 'px';
 
-            const pouRect = document.getElementById('pouContainer').getBoundingClientRect();
+            const mascotaRect = document.getElementById('mascotaContainer').getBoundingClientRect();
             const iRect = item.getBoundingClientRect();
 
-            if (!(iRect.right < pouRect.left || iRect.left > pouRect.right || iRect.bottom < pouRect.top || iRect.top > pouRect.bottom)) {
+            if (!(iRect.right < mascotaRect.left || iRect.left > mascotaRect.right || iRect.bottom < mascotaRect.top || iRect.top > mascotaRect.bottom)) {
                 if (tipo === 'comida') {
                     bites++;
                     if (bites % 8 === 0) {
                         let meta = buscarMetaItem('comida', cat, idItem);
-                        state.hambre = Math.min(100, state.hambre + meta.restaura);
-                        document.getElementById('pouSprite').src = `imgM/${mascotaClave}/e2.png`;
+                        if (meta) state.hambre = Math.min(100, state.hambre + meta.restaura);
+                        document.getElementById('mascotaSprite').src = `imgM/${state.mascota_clave}/e2.png`;
 
                         if (bites >= 24) {
                             state.inventario.comida[cat][idItem]--;
                             item.remove();
-                            document.getElementById('pouSprite').src = `imgM/${mascotaClave}/e1.png`;
+                            document.getElementById('mascotaSprite').src = `imgM/${state.mascota_clave}/e1.png`;
                             actualizarBarras();
                             irASala('cocina');
                         }
@@ -297,8 +319,8 @@ $inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
         if (id === 'energizer') state.energia = 100;
         if (id === 'hunger') state.hambre = 0;
         if (id === 'max_todo') { state.hambre = 100; state.felicidad = 100; state.energia = 100; state.higiene = 100; }
-        if (id === 'crecer') document.getElementById('pouContainer').style.transform = "scale(1.2)";
-        if (id === 'encoger') document.getElementById('pouContainer').style.transform = "scale(0.8)";
+        if (id === 'crecer') document.getElementById('mascotaContainer').style.transform = "scale(1.2)";
+        if (id === 'encoger') document.getElementById('mascotaContainer').style.transform = "scale(0.8)";
     }
 
     function toggleLuz() {
@@ -318,6 +340,7 @@ $inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
         const overlay = document.getElementById('shopOverlay');
         const tabs = document.getElementById('shopTabs');
         const content = document.getElementById('shopContent');
+        document.getElementById('titOverlay').textContent = '🛒 Tienda';
         overlay.style.display = 'flex';
         tabs.innerHTML = ''; content.innerHTML = '';
 
@@ -340,9 +363,55 @@ $inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
         }
     }
 
+    function abrirCatalogoMascotas() {
+        const overlay = document.getElementById('shopOverlay');
+        const tabs = document.getElementById('shopTabs');
+        const content = document.getElementById('shopContent');
+        document.getElementById('titOverlay').textContent = '🏆 Colección Mascotas';
+        overlay.style.display = 'flex';
+        tabs.innerHTML = '<span style="color:#a855f7; font-weight:bold;">ÁLBUM DE PERSONAJES</span>';
+        content.innerHTML = '';
+
+        for (let clave in MASCOTAS) {
+            let m = MASCOTAS[clave];
+            let obtenida = state.mascotas_desbloqueadas.includes(clave);
+            let equipada = state.mascota_clave === clave;
+
+            content.innerHTML += `
+                <div class="pet-card ${obtenida ? '' : 'bloqueado'} ${equipada ? 'equipada' : ''}">
+                    <div style="font-size:2.2rem;">${obtenida ? m.emoji : '❓'}</div>
+                    <div style="font-size:0.75rem; font-weight:bold; margin-top:4px;">${obtenida ? m.nombre : '???'}</div>
+                    <div style="font-size:0.65rem; color:#fef08a;">Rareza: ${m.rareza}</div>
+                    ${obtenida ? (equipada ? '<span style="color:#22c55e; font-size:0.7rem; font-weight:bold;">Equipado</span>' : `<button onclick="equiparMascota('${clave}')" style="background:#a855f7; color:white; border:none; padding:4px 8px; border-radius:6px; font-size:0.65rem; margin-top:4px; cursor:pointer;">Usar</button>`) : '<span style="color:#ef4444; font-size:0.65rem;">¡Gánalo en Minijuegos!</span>'}
+                </div>
+            `;
+        }
+    }
+
+    function equiparMascota(clave) {
+        state.mascota_clave = clave;
+        document.getElementById('mascotaSprite').src = `imgM/${clave}/e1.png`;
+        actualizarBarras();
+        abrirCatalogoMascotas();
+    }
+
+    window.intentarDesbloquearMascota = function() {
+        let noObtenidas = Object.keys(MASCOTAS).filter(k => !state.mascotas_desbloqueadas.includes(k));
+        if (noObtenidas.length === 0) return null;
+
+        if (Math.random() < 0.15) {
+            let seleccionada = noObtenidas[Math.floor(Math.random() * noObtenidas.length)];
+            state.mascotas_desbloqueadas.push(seleccionada);
+            actualizarBarras();
+            return seleccionada;
+        }
+        return null;
+    };
+
     function renderProductosComida(cat) {
         const content = document.getElementById('shopContent');
         content.innerHTML = '';
+        if (!TIENDA_CATALOGO.comida[cat]) return;
         TIENDA_CATALOGO.comida[cat].forEach(p => {
             content.innerHTML += `
                 <div style="background:#1e293b; padding:8px; border-radius:8px; text-align:center;">
@@ -385,6 +454,8 @@ $inventario_raw = !empty($usuario['inventario']) ?$usuario['inventario'] : '{}';
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(state)
+        }).then(() => {
+            document.getElementById('lblSaveStatus').textContent = '✅ Guardado';
         });
     }
     </script>

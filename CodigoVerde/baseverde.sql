@@ -30,7 +30,9 @@ SET time_zone = "+00:00";
 CREATE TABLE `usuarios` (
   `id` int(11) NOT NULL,
   `email` varchar(150) NOT NULL,
-  `mascota_clave` varchar(50) DEFAULT NULL,
+  `password` varchar(255) NOT NULL DEFAULT '',
+  `mascota_clave` varchar(50) DEFAULT 'leto',
+  `mascotas_desbloqueadas` text DEFAULT '["leto"]',
   `xp` int(11) DEFAULT 0,
   `cuentos_leidos` text DEFAULT NULL,
   `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp(),

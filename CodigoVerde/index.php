@@ -111,7 +111,7 @@ $descripcion = "Una plataforma educativa donde los niños de educación básica 
         <h2>Equipo Creador</h2>
         <div class="cards">
             <div class="card">
-                <h3>Robledo Gaeta Montserrat</h3>
+                <h3>Robledo Gaeta Montserrath</h3>
                 <p>Investigación del proyecto y análisis de los Objetivos de Desarrollo Sostenible (ODS).</p>
             </div>
             <div class="card">
@@ -119,7 +119,7 @@ $descripcion = "Una plataforma educativa donde los niños de educación básica 
                 <p>Creación del videojuego/app, diseño de la experiencia interactiva y elaboración de recursos visuales.</p>
             </div>
             <div class="card">
-                <h3>Peralta Navarrete Sebastián</h3>
+                <h3>Peralta Navarrete Sebastian</h3>
                 <p>Desarrollo de la página web, diseño, programación e integración tecnológica del servidor.</p>
             </div>
         </div>
